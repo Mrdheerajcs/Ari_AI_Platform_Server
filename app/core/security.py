@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
-
 import jwt
-from fastapi import Header, HTTPException
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 SECRET_KEY = "ari_ai_platform_secret_key"
 ALGORITHM = "HS256"
 
 BYPASS_TOKEN = "ARI_BYPASS_TOKEN"
-
+security = HTTPBearer()
 
 def create_access_token(data: dict):
 
@@ -49,8 +49,21 @@ def verify_token(token: str):
 
 
 def authenticate_api(
-    authorization: str = Header(None)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
+
+    token = credentials.credentials
+
+    payload = verify_token(token)
+
+    if not payload:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+
+    return payload
 
     if not authorization:
 

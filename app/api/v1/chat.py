@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.core.security import authenticate_api
 from app.schemas.chat import ChatRequest
 
 from app.services.security_service import mask_sensitive_data
@@ -19,7 +21,10 @@ router = APIRouter()
 
 
 @router.post("/chat")
-def chat(request: ChatRequest):
+def chat(
+    request: ChatRequest,
+    user=Depends(authenticate_api)
+):
 
     # Project Validation
     if not validate_project(request.project_id):
