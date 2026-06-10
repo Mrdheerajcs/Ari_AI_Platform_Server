@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-
+from app.api.v1.auth import router as auth_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.chat import router as chat_router
 from app.api.v1.history import router as history_router
@@ -18,7 +18,12 @@ app.include_router(
     prefix="/api/v1",
     tags=["Chat"]
 )
-
+# Authentication
+app.include_router(
+    auth_router,
+    prefix="/api/v1",
+    tags=["Authentication"]
+)
 # History
 app.include_router(
     history_router,

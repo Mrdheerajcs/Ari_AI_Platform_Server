@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.core.security import authenticate_api
 from app.models.project import ProjectCreate
 
 from app.services.project_registry_service import (
@@ -12,11 +13,15 @@ from app.services.project_registry_service import (
     maintenance_project,
     delete_project
 )
+
 router = APIRouter()
 
 
 @router.post("/projects")
-def register_project(project: ProjectCreate):
+def register_project(
+    project: ProjectCreate,
+    user=Depends(authenticate_api)
+):
 
     return create_project(
         project.name,
@@ -27,13 +32,18 @@ def register_project(project: ProjectCreate):
 
 
 @router.get("/projects")
-def list_projects():
+def list_projects(
+    user=Depends(authenticate_api)
+):
 
     return get_projects()
 
 
 @router.get("/projects/{project_id}")
-def get_project_by_id(project_id: str):
+def get_project_by_id(
+    project_id: str,
+    user=Depends(authenticate_api)
+):
 
     return get_project(project_id)
 
@@ -41,7 +51,8 @@ def get_project_by_id(project_id: str):
 @router.put("/projects/{project_id}")
 def update_project_by_id(
     project_id: str,
-    project: ProjectCreate
+    project: ProjectCreate,
+    user=Depends(authenticate_api)
 ):
 
     return update_project(
@@ -51,25 +62,39 @@ def update_project_by_id(
         project.email,
         project.enable_db
     )
+
+
 @router.post("/projects/{project_id}/activate")
-def activate_project_by_id(project_id: str):
+def activate_project_by_id(
+    project_id: str,
+    user=Depends(authenticate_api)
+):
 
     return activate_project(project_id)
 
 
 @router.post("/projects/{project_id}/deactivate")
-def deactivate_project_by_id(project_id: str):
+def deactivate_project_by_id(
+    project_id: str,
+    user=Depends(authenticate_api)
+):
 
     return deactivate_project(project_id)
 
 
 @router.put("/projects/{project_id}/maintenance")
-def maintenance_project_by_id(project_id: str):
+def maintenance_project_by_id(
+    project_id: str,
+    user=Depends(authenticate_api)
+):
 
     return maintenance_project(project_id)
 
 
 @router.delete("/projects/{project_id}")
-def delete_project_by_id(project_id: str):
+def delete_project_by_id(
+    project_id: str,
+    user=Depends(authenticate_api)
+):
 
     return delete_project(project_id)
