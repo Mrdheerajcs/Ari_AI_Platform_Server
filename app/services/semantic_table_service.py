@@ -1,49 +1,20 @@
-from sentence_transformers import SentenceTransformer
-from sentence_transformers import util
-
 from app.services.schema_service import get_database_schema
-
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
-
-schema = get_database_schema()
-
-table_embeddings = {}
-
-for table_name, columns in schema.items():
-
-    table_text = (
-        table_name
-        + " "
-        + " ".join(columns)
-    )
-
-    table_embeddings[table_name] = model.encode(
-        table_text,
-        convert_to_tensor=True
-    )
 
 
 def find_best_table(question: str):
 
-    question_embedding = model.encode(
-        question,
-        convert_to_tensor=True
-    )
+    schema = get_database_schema()
 
-    best_table = None
-    best_score = 0
+    question = question.lower()
 
-    for table_name, embedding in table_embeddings.items():
+    for table_name in schema.keys():
 
-        score = util.cos_sim(
-            question_embedding,
-            embedding
-        ).item()
+        if table_name.lower() in question:
+            return table_name
 
-        if score > best_score:
-            best_score = score
-            best_table = table_name
+    tables = list(schema.keys())
 
-    return best_table
+    if tables:
+        return tables[0]
+
+    return None

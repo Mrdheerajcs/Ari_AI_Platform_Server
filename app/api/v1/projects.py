@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends
 
 from app.core.security import authenticate_api
+
 from app.models.project import ProjectCreate
+from app.models.project_status import ProjectStatusUpdate
+from app.models.database_status import DatabaseStatusUpdate
 
 from app.services.project_registry_service import (
     create_project,
     get_projects,
     get_project,
     update_project,
-    activate_project,
-    deactivate_project,
-    maintenance_project,
+    update_project_status,
+    update_database_status,
     delete_project
 )
 
@@ -64,31 +66,30 @@ def update_project_by_id(
     )
 
 
-@router.post("/projects/{project_id}/activate")
-def activate_project_by_id(
+@router.put("/projects/{project_id}/status")
+def update_status(
     project_id: str,
+    request: ProjectStatusUpdate,
     user=Depends(authenticate_api)
 ):
 
-    return activate_project(project_id)
+    return update_project_status(
+        project_id,
+        request.status
+    )
 
 
-@router.post("/projects/{project_id}/deactivate")
-def deactivate_project_by_id(
+@router.put("/projects/{project_id}/database")
+def update_database(
     project_id: str,
+    request: DatabaseStatusUpdate,
     user=Depends(authenticate_api)
 ):
 
-    return deactivate_project(project_id)
-
-
-@router.put("/projects/{project_id}/maintenance")
-def maintenance_project_by_id(
-    project_id: str,
-    user=Depends(authenticate_api)
-):
-
-    return maintenance_project(project_id)
+    return update_database_status(
+        project_id,
+        request.enable_db
+    )
 
 
 @router.delete("/projects/{project_id}")

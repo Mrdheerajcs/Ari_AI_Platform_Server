@@ -1,28 +1,19 @@
-from app.api.v1.documents import DOCUMENTS
+from app.services.vector_store import (
+    search_project_knowledge
+)
 
 
-def search_documents(project_id: str, question: str):
+def search_documents(
+    project_id: str,
+    question: str
+):
 
-    question = question.lower()
+    result = search_project_knowledge(
+        project_id=project_id,
+        question=question
+    )
 
-    documents = DOCUMENTS.get(project_id, [])
+    if not result:
+        return None
 
-    for doc in documents:
-
-        if "chunks" in doc:
-
-            for chunk in doc["chunks"]:
-
-                chunk_lower = chunk.lower()
-
-                if any(word in chunk_lower for word in question.split()):
-                    return chunk
-
-        elif "text" in doc:
-
-            text = doc["text"].lower()
-
-            if any(word in text for word in question.split()):
-                return doc["text"]
-
-    return None
+    return result

@@ -128,13 +128,24 @@ def get_projects():
             text(
                 """
                 SELECT
+                    id,
                     project_id,
                     project_name,
                     description,
-                    email,
-                    role,
+                    status,
                     enable_db,
-                    status
+                    enable_global_kb,
+                    service_start_date,
+                    service_end_date,
+                    subscription_tier,
+                    max_queries_per_day,
+                    max_storage_mb,
+                    created_by,
+                    created_at,
+                    updated_at,
+                    deleted_at,
+                    email,
+                    role
                 FROM projects
                 ORDER BY id
                 """
@@ -145,12 +156,41 @@ def get_projects():
 
         for row in result:
 
-            rows.append(
-                dict(row._mapping)
-            )
+            project = dict(row._mapping)
+
+            docs = conn.execute(
+                text(
+                    """
+                    SELECT
+                        id,
+                        document_name,
+                        s3_path
+                    FROM project_documents
+                    WHERE project_id = :project_db_id
+                    ORDER BY id
+                    """
+                ),
+                {
+                    "project_db_id": row.id
+                }
+            ).fetchall()
+
+            project["docPath"] = []
+
+            for doc in docs:
+
+                project["docPath"].append(
+                    {
+                        "docId": doc.id,
+                        "docName": doc.document_name,
+                        "docpath": doc.s3_path
+                    }
+                )
+
+            rows.append(project)
 
         return rows
-
+        
 
 def get_project(project_id: str):
 
@@ -160,13 +200,24 @@ def get_project(project_id: str):
             text(
                 """
                 SELECT
+                    id,
                     project_id,
                     project_name,
                     description,
-                    email,
-                    role,
+                    status,
                     enable_db,
-                    status
+                    enable_global_kb,
+                    service_start_date,
+                    service_end_date,
+                    subscription_tier,
+                    max_queries_per_day,
+                    max_storage_mb,
+                    created_by,
+                    created_at,
+                    updated_at,
+                    deleted_at,
+                    email,
+                    role
                 FROM projects
                 WHERE project_id = :project_id
                 """
@@ -177,12 +228,44 @@ def get_project(project_id: str):
         ).fetchone()
 
         if not result:
+
             return {
                 "status": "error",
                 "message": "Project not found"
             }
 
-        return dict(result._mapping)
+        project = dict(result._mapping)
+
+        docs = conn.execute(
+            text(
+                """
+                SELECT
+                    id,
+                    document_name,
+                    s3_path
+                FROM project_documents
+                WHERE project_id = :project_db_id
+                ORDER BY id
+                """
+            ),
+            {
+                "project_db_id": result.id
+            }
+        ).fetchall()
+
+        project["docPath"] = []
+
+        for doc in docs:
+
+            project["docPath"].append(
+                {
+                    "docId": doc.id,
+                    "docName": doc.document_name,
+                    "docpath": doc.s3_path
+                }
+            )
+
+        return project
 
 
 def update_project(
@@ -223,7 +306,23 @@ def update_project(
             }
 
     return get_project(project_id)
-def activate_project(project_id: str):
+def update_project_status(
+    project_id: str,
+    status: str
+):
+
+    allowed_status = [
+        "active",
+        "inactive",
+        "maintenance"
+    ]
+
+    if status not in allowed_status:
+
+        return {
+            "status": "error",
+            "message": "Invalid status"
+        }
 
     with engine.begin() as conn:
 
@@ -231,16 +330,18 @@ def activate_project(project_id: str):
             text(
                 """
                 UPDATE projects
-                SET status = 'active'
+                SET status = :status
                 WHERE project_id = :project_id
                 """
             ),
             {
-                "project_id": project_id
+                "project_id": project_id,
+                "status": status
             }
         )
 
         if result.rowcount == 0:
+
             return {
                 "status": "error",
                 "message": "Project not found"
@@ -248,11 +349,14 @@ def activate_project(project_id: str):
 
     return {
         "status": "success",
-        "message": "Project activated successfully"
+        "message": f"Project status updated to {status}"
     }
 
 
-def deactivate_project(project_id: str):
+def update_database_status(
+    project_id: str,
+    enable_db: bool
+):
 
     with engine.begin() as conn:
 
@@ -260,16 +364,18 @@ def deactivate_project(project_id: str):
             text(
                 """
                 UPDATE projects
-                SET status = 'inactive'
+                SET enable_db = :enable_db
                 WHERE project_id = :project_id
                 """
             ),
             {
-                "project_id": project_id
+                "project_id": project_id,
+                "enable_db": enable_db
             }
         )
 
         if result.rowcount == 0:
+
             return {
                 "status": "error",
                 "message": "Project not found"
@@ -277,36 +383,7 @@ def deactivate_project(project_id: str):
 
     return {
         "status": "success",
-        "message": "Project deactivated successfully"
-    }
-
-
-def maintenance_project(project_id: str):
-
-    with engine.begin() as conn:
-
-        result = conn.execute(
-            text(
-                """
-                UPDATE projects
-                SET status = 'maintenance'
-                WHERE project_id = :project_id
-                """
-            ),
-            {
-                "project_id": project_id
-            }
-        )
-
-        if result.rowcount == 0:
-            return {
-                "status": "error",
-                "message": "Project not found"
-            }
-
-    return {
-        "status": "success",
-        "message": "Project moved to maintenance mode"
+        "message": "Database status updated"
     }
 
 

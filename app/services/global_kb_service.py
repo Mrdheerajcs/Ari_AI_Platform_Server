@@ -1,16 +1,10 @@
-GLOBAL_KB = {
-    "what is ari ai": "ARI AI is a centralized enterprise AI platform.",
-    "how does ari ai work": "ARI AI processes your questions and routes them through the appropriate engines.",
-    "is my data secure": "Yes, ARI AI provides complete project isolation and secure access."
-}
+from app.services.vector_store import (
+    search_global_knowledge
+)
 
 
 def get_global_answer(question: str):
 
-    question = (
-        question.lower()
-        .replace("?", "")
-        .strip()
+    return search_global_knowledge(
+        question
     )
-
-    return GLOBAL_KB.get(question)
